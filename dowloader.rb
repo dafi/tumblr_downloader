@@ -12,7 +12,7 @@ class TumblrDownloader
     def initialize(opts)
         @opts = opts
 
-        @blog_url = fix_url_domain(@opts.blog_url)
+        @blog_url = TumblrDownloader.fix_url_domain(@opts.blog_url)
         if @opts.prefix_cache_dir
             @cache_dir = File.join(@opts.prefix_cache_dir, @blog_url)
         else
@@ -74,7 +74,7 @@ class TumblrDownloader
 
         all_posts.each do |posts|
             posts['response']['posts'].each do |post|
-                all_tags = all_tags + post['tags'].map { |tag| tag.downcase }
+                all_tags.concat(post['tags'].map { |tag| tag.downcase })
             end
         end
         open(File.join(@cache_dir, "tags.txt"), 'wb') do |file|
@@ -150,5 +150,6 @@ if opts.tags_path
 else
     dl = TumblrDownloader.new(opts)
     all_posts = dl.download
+    puts "Posts downloaded, writing tags..."
     dl.write_tags(all_posts)
 end
