@@ -7,6 +7,7 @@ require "json"
 require 'fileutils'
 require 'optparse'
 require 'ostruct'
+require 'set'
 
 class TumblrDownloader
     def initialize(opts)
@@ -70,15 +71,15 @@ class TumblrDownloader
     end
 
     def write_tags(all_posts)
-        all_tags = []
+        all_tags = Set.new
 
         all_posts.each do |posts|
             posts['response']['posts'].each do |post|
-                all_tags.concat(post['tags'].map { |tag| tag.downcase })
+                all_tags.merge(post['tags'].map { |tag| tag.downcase })
             end
         end
         open(File.join(@cache_dir, "tags.txt"), 'wb') do |file|
-            file.puts(all_tags.sort.uniq)
+            file.puts(all_tags.to_a.sort)
         end
     end
 
