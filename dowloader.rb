@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # Download all tumblr public posts
 # The posts (as JSON) are saved on local directory to speedup reload
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # Print CSV content as expected by PhotoShelf
 require 'json'
 
@@ -9,7 +10,7 @@ def print_csv_lines(posts)
     tags = post['tags']
 
     tags.each_with_index do |t, idx|
-      puts "#{post_id};#{blog_name};#{t};#{timestamp};#{idx + 1}"
+      puts "#{post_id};#{blog_name};#{t.downcase};#{timestamp};#{idx + 1}"
     end
   end
 end
