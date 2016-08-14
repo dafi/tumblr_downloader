@@ -11,6 +11,7 @@ TEMPORAL_RANGE = [365, 180, 30, 7, 1].freeze
 
 def show_stats(lines)
   (last_date, last_count) = date_count_from_line(lines.last)
+  puts last_date.strftime("Last update %d/%m/%Y")
 
   # Add the oldest item (ie the first line) to temporal ranges
   oldest_date, = date_count_from_line(lines.first)
@@ -52,8 +53,11 @@ def print_statistics(indexes, last_count)
   indexes.keys.reverse.each do |k|
     values = indexes[k]
     diff = last_count - values['count']
-    puts "In #{values['days']} days"\
-    " passed from #{values['count']} to #{last_count} delta is #{diff}"
+    puts sprintf "In %4d days passed from %5d to %5d (%+6d)",
+      values['days'],
+      values['count'],
+      last_count,
+      diff
   end
 end
 
