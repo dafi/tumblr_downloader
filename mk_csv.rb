@@ -18,8 +18,7 @@ end
 def parse_file(path)
   json_map = JSON.parse(open(path).read)
   response = json_map['response']
-  posts = response['posts']
-  print_csv_lines posts
+  response['posts']
 end
 
 if ARGV.empty?
@@ -27,6 +26,13 @@ if ARGV.empty?
   exit
 end
 
-Dir.glob(File.join(ARGV[0], '*.json')) do |f|
-  parse_file f if File.file?(f)
+def read_files(dir)
+  posts = []
+  Dir.glob(File.join(dir, '*.json')) do |f|
+    posts += parse_file(f)
+  end
+  posts.sort! { |a, b| a['id'].to_i <=> b['id'].to_i }
+  print_csv_lines(posts)
 end
+
+read_files(ARGV[0])
