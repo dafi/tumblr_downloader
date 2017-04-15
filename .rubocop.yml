@@ -1,0 +1,18 @@
+Style/IndentationWidth:
+  # Number of spaces for each indentation level.
+  Width: 2
+Style/NestedTernaryOperator:
+  Enabled: false
+Lint/UnneededDisable:
+  Enabled: false
+Style/FormatString:
+  Enabled: false
+Metrics/AbcSize:
+  Enabled: false
+Metrics/LineLength:
+  Max: 90
+  Enabled: false
+Metrics/MethodLength:
+  Enabled: false
+Metrics/CyclomaticComplexity:
+  Enabled: false
