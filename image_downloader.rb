@@ -71,21 +71,21 @@ class ImageDownloader
     m = Dir.glob(File.join(@opts.json_path, '*.json'))
     file_count = m.length
 
-    m.each_with_index do |f, i|
-      puts "File #{i} of #{file_count} "
+    m.each do |f|
+      puts "File #{File.basename(f)} of #{file_count} "
       begin
         process_json_file(f, @opts.image_path, false)
       rescue DownloadError => err
-        log_download_error(err, i)
-        sleep 25
+        log_download_error(err, File.basename(f))
+        # sleep 25
       end
     end
   end
 
-  def log_download_error(err, file_index)
+  def log_download_error(err, file_name)
     post = err.post
     puts "logged error for #{post['tags']}"
-    @log.fatal("#{post['id']} #{post['tags']} index #{file_index}")
+    @log.fatal("#{post['id']} #{post['tags']} file #{file_name}")
     @log.fatal(err.cause.to_s)
   end
 
