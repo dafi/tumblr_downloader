@@ -71,8 +71,8 @@ class ImageDownloader
     m = Dir.glob(File.join(@opts.json_path, '*.json'))
     file_count = m.length
 
-    m.each do |f|
-      puts "File #{File.basename(f)} of #{file_count} "
+    m.each_with_index do |f, i|
+      puts "File #{File.basename(f)} of #{i + 1}/#{file_count} "
       begin
         process_json_file(f, @opts.image_path, false)
       rescue DownloadError => err
