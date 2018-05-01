@@ -96,9 +96,9 @@ class PostPrinter
         exit
       end
     rescue OptionParser::InvalidOption, OptionParser::MissingArgument
-        puts $!.to_s
-        puts optparse
-        exit
+      puts $!.to_s
+      puts optparse
+      exit
     end
 
     if !cmd_opts.print_tags && !cmd_opts.print_csv && !cmd_opts.print_html_tags
