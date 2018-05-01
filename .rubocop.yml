@@ -1,12 +1,12 @@
-Style/IndentationWidth:
+Layout/IndentationWidth:
   # Number of spaces for each indentation level.
   Width: 2
 Style/NestedTernaryOperator:
   Enabled: false
-Lint/UnneededDisable:
-  Enabled: false
 Style/FormatString:
   Enabled: false
+Style/RescueStandardError:
+  EnforcedStyle: implicit
 Metrics/AbcSize:
   Enabled: false
 Metrics/LineLength:
@@ -16,3 +16,6 @@ Metrics/MethodLength:
   Enabled: false
 Metrics/CyclomaticComplexity:
   Enabled: false
+Security/Open:
+  Enabled: false
+
