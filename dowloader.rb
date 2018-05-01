@@ -24,10 +24,10 @@ class TumblrDownloader
   end
 
   def read_json_write_cache(url)
-    text = open(url).read
+    text = open(url, read_timeout: 2, open_timeout: 3).read
 
-    # file name is the current time in milliseconds
-    dest_file_name = (Time.now.to_f * 1000).to_i
+    # file name is the first post id
+    dest_file_name = text.match(/"id":(\d+)/)[1]
     # when reading from real url we must write to cache
     unless @opts.use_cache
       open(File.join(@cache_dir, "#{dest_file_name}.json"), 'wb') do |file|
@@ -131,9 +131,9 @@ class TumblrDownloader
         exit
       end
     rescue OptionParser::InvalidOption, OptionParser::MissingArgument
-        puts $!.to_s
-        puts optparse
-        exit
+      puts $!.to_s
+      puts optparse
+      exit
     end
 
     # puts "Performing task with options: #{cmd_opts.inspect}"
