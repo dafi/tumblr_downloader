@@ -10,6 +10,7 @@ require 'ostruct'
 require 'logger'
 
 LOG_PATH = 'images.log'.freeze
+ROUND_UP_PIXEL = [75, 100, 250, 400, 500, 540, 1280].freeze
 
 def parse_command_line
   cmd_opts = OpenStruct.new
@@ -68,11 +69,14 @@ class ImageDownloader
 
   def download
     FileUtils.mkdir_p(@opts.image_path) unless Dir.exist?(@opts.image_path)
-    m = Dir.glob(File.join(@opts.json_path, '*.json'))
+    m = Dir.glob(File.join(@opts.json_path, '*.json')).sort! do |a, b|
+      a.match(%r{.*/(\d+)})[1].to_i <=> b.match(%r{.*/(\d+)})[1].to_i
+    end
     file_count = m.length
 
     m.each_with_index do |f, i|
-      puts "File #{File.basename(f)} of #{i + 1}/#{file_count} "
+      perc = (i + 1) * 100.0 / file_count
+      puts "File #{File.basename(f)} of #{i + 1}/#{file_count} #{'%.2f' % perc}%"
       begin
         process_json_file(f, @opts.image_path, false)
       rescue DownloadError => err
@@ -91,26 +95,64 @@ class ImageDownloader
 
   def process_json_file(json_path, root_dir, overwrite)
     json = JSON.parse(open(json_path).read)
+
     json['response']['posts'].each do |post|
+      photo_info_list = []
+      add_original_size_to_photo_info(post).each do |photo_info|
+        path = build_destination_path(photo_info, root_dir, post)
+        photo_info_list << [path, photo_info] if overwrite || !File.exist?(path)
+      end
+
       begin
-        save_url_from_post(post, root_dir, overwrite)
+        save_url_from_post(post, photo_info_list) unless photo_info_list.empty?
       rescue
         raise DownloadError, post
       end
     end
   end
 
-  def save_url_from_post(post, root_dir, overwrite)
-    post_id = post['id']
-    tag = post['tags'].empty? ? 'untagged' : post['tags'][0].downcase
-    url = post['photos'][0]['original_size']['url']
-    ext_file = url[/^.*(\..*)/, 1]
-    ext_file ||= '.jpg'
+  # add original_size photo to alt_szies
+  # if it differs from the largest image present on alt_sizes
+  def add_original_size_to_photo_info(post)
+    first_photo = post['photos'][0]
+    alt_sizes = first_photo['alt_sizes']
 
-    dest_dir = File.join(root_dir, dest_dir_by_tags(post['tags']))
+    if alt_sizes[0]['url'] != first_photo['original_size']['url']
+      alt_sizes << first_photo['original_size']
+    end
+
+    alt_sizes
+  end
+
+  def save_url_from_post(post, path_photo_info_tuple)
+    tag = post['tags'].empty? ? 'untagged' : post['tags'][0].downcase
+    print "downloading #{post['id']} for #{tag}:"
+    threads = path_photo_info_tuple.map do |tuple|
+      Thread.new do
+        path, photo_info = tuple
+        save_url(photo_info['url'], path)
+        print " #{find_width(photo_info)}"
+      end
+    end
+    threads.each(&:join)
+    puts
+  end
+
+  def build_destination_path(photo_info, root_dir, post)
+    size = find_width(photo_info) || 'unknown_width'
+    dest_dir = File.join(root_dir, dest_dir_by_tags(post['tags']), size)
     FileUtils.mkdir_p(dest_dir) unless Dir.exist?(dest_dir)
-    puts "downloading #{post_id} for #{tag}"
-    save_url(url, File.join(dest_dir, "#{post_id}#{ext_file}"), overwrite)
+
+    url = photo_info['url']
+    ext_file = url[/^.*(\..*)/, 1] || '.jpg'
+    File.join(dest_dir, "#{post['id']}#{ext_file}")
+  end
+
+  def find_width(photo_info)
+    m = photo_info['url'].match(/(\d+)(?!.*\d)/)
+    return m[1] if m
+    width = photo_info['width']
+    ROUND_UP_PIXEL.find { |w| width <= w }.to_s
   end
 
   def dest_dir_by_tags(tags)
@@ -119,11 +161,10 @@ class ImageDownloader
     File.join(tag[0, 1], tag)
   end
 
-  def save_url(url, dest_path, overwrite)
-    return if !overwrite && File.exist?(dest_path)
+  def save_url(url, dest_path)
     # read file before create the output
-    # so if some exception is raised empty file isn't created
-    content = open(url).read
+    # so if some exception is raised the empty file isn't created
+    content = open(url, read_timeout: 2, open_timeout: 3).read
     open(dest_path, 'wb') { |f| f << content }
   end
 end
