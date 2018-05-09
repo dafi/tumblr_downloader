@@ -6,7 +6,7 @@ require 'optparse'
 class TagFixer
   def photoshelf_map(csv_path)
     tags_map = {}
-    File.open(csv_path).each_line do |l|
+    File.open(csv_path, 'r:UTF-8').each_line do |l|
       fields = l.split(';')
       post = fields[0].to_i
       tag = fields[2]
@@ -58,7 +58,7 @@ class TagFixer
     tags_map = photoshelf_map(photoshelf_path)
 
     Dir.glob(File.join(json_path, '*.json')) do |path|
-      json = Oj.load(File.open(path, 'r').read)
+      json = Oj.load(File.open(path, 'r:UTF-8').read)
       next unless fix_json(json, tags_map)
       fname = File.basename(path)
       File.open(File.join(out_dir, fname), 'w') { |f| f << Oj.generate(json) }
