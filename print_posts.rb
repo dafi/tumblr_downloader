@@ -18,6 +18,26 @@ class PostPrinter
     end
   end
 
+  def print_sql(posts)
+    tag_set = Set.new
+    posts.each do |post|
+      blog_name = post['blog_name']
+      post_id = post['id']
+      timestamp = post['timestamp']
+      tags = post['tags']
+
+      puts "insert into post(id, blog_id, publish_timestamp) values(#{post_id}, (SELECT id FROM blog where name = '#{blog_name}'), #{timestamp});"
+
+      tags.each_with_index do |t, idx|
+        tag = t.downcase.gsub("'", "''")
+
+        puts "insert ignore into tag (name) values ('#{tag}');" unless tag_set.include?(tag)
+        tag_set << tag
+        puts "insert into post_tag(tag_id, post_id, show_order) values((SELECT id FROM tag where name = '#{tag}'), #{post_id},#{idx + 1});"
+      end
+    end
+  end
+
   def tags(posts)
     all_tags = Set.new
 
@@ -59,6 +79,7 @@ class PostPrinter
   def self.parse_command_line
     cmd_opts = OpenStruct.new
     cmd_opts.print_csv = false
+    cmd_opts.print_sql = false
     cmd_opts.print_tags = false
     cmd_opts.print_html_tags = false
     cmd_opts.posts_path = nil
@@ -71,6 +92,9 @@ class PostPrinter
       end
       opts.on('-c', '--csv', 'Print CSV as expected by PhotoShelf') do |flag|
         cmd_opts.print_csv = flag
+      end
+      opts.on('-s', '--sql', 'Print SQL as expected by PhotoShelf') do |flag|
+        cmd_opts.print_sql = flag
       end
       opts.on('-t', '--tags', 'Print tags') do |flag|
         cmd_opts.print_tags = flag
@@ -101,7 +125,12 @@ class PostPrinter
       exit
     end
 
-    if !cmd_opts.print_tags && !cmd_opts.print_csv && !cmd_opts.print_html_tags
+    unless cmd_opts.posts_path
+      puts 'JON path is mandatory'
+      exit
+    end
+
+    if !cmd_opts.print_tags && !cmd_opts.print_csv && !cmd_opts.print_sql && !cmd_opts.print_html_tags
       puts 'Nothing to print, specify at least a printer'
       puts optparse
       exit
@@ -118,4 +147,5 @@ po = PostPrinter.new
 posts = po.read_files(opts.posts_path)
 po.print_tags(posts) if opts.print_tags
 po.print_csv(posts) if opts.print_csv
+po.print_sql(posts) if opts.print_sql
 po.print_html_tags(posts) if opts.print_html_tags
