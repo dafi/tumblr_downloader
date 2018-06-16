@@ -24,9 +24,10 @@ class PostPrinter
       blog_name = post['blog_name']
       post_id = post['id']
       timestamp = post['timestamp']
+      reblog_key = post['reblog_key']
       tags = post['tags']
 
-      puts "insert into post(id, blog_id, publish_timestamp) values(#{post_id}, (SELECT id FROM blog where name = '#{blog_name}'), #{timestamp});"
+      puts "insert into post(id, blog_id, publish_timestamp, reblog_key) values(#{post_id}, (SELECT id FROM blog where name = '#{blog_name}'), #{timestamp}, '#{reblog_key}');"
 
       tags.each_with_index do |t, idx|
         tag = t.downcase.gsub("'", "''")
@@ -34,6 +35,14 @@ class PostPrinter
         puts "insert ignore into tag (name) values ('#{tag}');" unless tag_set.include?(tag)
         tag_set << tag
         puts "insert into post_tag(tag_id, post_id, show_order) values((SELECT id FROM tag where name = '#{tag}'), #{post_id},#{idx + 1});"
+      end
+
+      photos = post['photos'][0] # image set not yet supported
+
+      os = photos['original_size']
+      puts "insert into photo(post_id, width, height,url,show_order, photo_type_id) values(#{post_id}, #{os['width']}, #{os['height']}, '#{os['url']}', 1, 1);"
+      photos['alt_sizes'].each_with_index do |photo, idx|
+        puts "insert into photo(post_id, width, height,url,show_order, photo_type_id) values(#{post_id}, #{photo['width']}, #{photo['height']}, '#{photo['url']}', #{idx}, 2);"
       end
     end
   end

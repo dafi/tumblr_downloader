@@ -2,4 +2,4 @@ config.sh
 blogs/
 tags/
 *.log
-
+temp/
